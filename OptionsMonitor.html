@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+
+<html>
+
+	<head>
+	<style>
+		table {
+			font-family: arial, sans-serif;
+			border-collapse: collapse;
+			width: 100%;
+		}
+
+		td, th {
+			border: 1px solid #9a9a9a;
+			text-align: left;
+			padding: 8px;
+		}
+
+		tr:nth-child(even) {
+			background-color: #dddddd;
+		}
+	</style>
+	</head>
+
+	<body>
+
+		<h3>Options Monitor</h3>
+
+		<table id="stockTable">
+			<tbody id ="stockTableBody">
+			</tbody>
+		</table>
+
+		<!-- <button onclick="updateTable()">Try it</button> -->
+
+		<script>
+			const host = "127.0.0.1"
+			const port = "3000"
+
+			const updateUrl="http://" + host + ":" + port + "/stocks";
+
+			function fetchData() {
+				const Http = new XMLHttpRequest();
+				Http.open("GET", updateUrl);
+				Http.send();
+				Http.onreadystatechange = (e) => {
+					try {
+				  	updateTable(JSON.parse(Http.responseText))
+					} catch(e) {
+					}
+				}
+			}
+
+			function updateTable(data) {
+				if (data == undefined)
+					return
+
+			  var stockTable = document.getElementById("stockTableBody");
+
+			  data.forEach(stock => {
+			  	// Get or create row.
+			  	var stockRow = document.getElementById(stock.symbol + "_row")
+			  	if (stockRow == null) {
+			  		stockRow = document.createElement("tr")
+			  		stockRow.setAttribute("id", stock.symbol + "_row")
+			  		stockTable.appendChild(stockRow)
+
+			  		// Add Stock Symbol Cell
+			  		var stockSymbol = document.createElement("td")
+			  		stockSymbol.setAttribute("id", stock.symbol + "_symbol")
+			  		//stockSymbol.setAttribute("style", "width: 12px;")
+			  		stockSymbol.innerHTML = stock.symbol
+			  		stockRow.appendChild(stockSymbol)
+			  	}
+
+			  	// Get or create bid.
+			  	var stockBid = document.getElementById(stock.symbol + "_bid")
+			  	if (stockBid == null) {
+			  		stockBid = document.createElement("td")
+			  		stockBid.setAttribute("id", stock.symbol + "_bid")
+			  		//stockBid.setAttribute("style", "width: 12px;")
+			  		stockRow.appendChild(stockBid)
+			  	}
+			  	// Update bid text
+			  	stockBid.innerHTML = "$" + parseFloat(stock.bid).toFixed(2)
+
+			  	// Get or create ask.
+			  	var stockAsk = document.getElementById(stock.symbol + "_ask")
+			  	if (stockAsk == null) {
+			  		stockAsk = document.createElement("td")
+			  		stockAsk.setAttribute("id", stock.symbol + "_ask")
+			  		stockAsk.setAttribute("style", "width: 12px;")
+			  		stockRow.appendChild(stockAsk)
+			  	}
+			  	// Update ask text
+			  	stockAsk.innerHTML = "$" + parseFloat(stock.ask).toFixed(2)
+
+			  	// Add Options
+			  	Object.keys(stock.options).forEach(expire => {
+			  		var expireTable = document.getElementById(stock.symbol + expire + "_table")
+			  		if (expireTable == null) {
+			  			expireTable = document.createElement("table")
+			  			expireTable.setAttribute("id", stock.symbol + expire + "_table")
+			  			// expireTable.setAttribute("style", "width: 100%;")
+			  			stockRow.appendChild(expireTable)
+
+			  			var expireRow = document.createElement("tr")
+			  			expireRow.setAttribute("id", stock.symbol + expire + "_tableRow")
+			  			expireRow.setAttribute("style", "align: left;")
+
+			  			var expireHeader = document.createElement("th")
+			  			expireHeader.setAttribute("id", stock.symbol + expire + "_tableHeader")
+			  			expireHeader.setAttribute("style", "text-align: center; vertical-align: center;")
+			  			expireHeader.innerHTML = expire
+			  			expireRow.appendChild(expireHeader)
+
+			  			expireTable.appendChild(expireRow)
+			  		}
+			  		var expireRow = document.getElementById(stock.symbol + expire + "_tableRow")
+
+			  		const cellWidth = "17.5%"
+			  		Object.keys(stock.options[expire]).forEach(strike => {
+			  			var option = stock.options[expire][strike]
+
+			  			var optionCell = document.getElementById(option.symbol + "_cell")
+			  			if (optionCell == null) {
+			  				optionCell = document.createElement("td")
+			  				optionCell.setAttribute("id", option.symbol + "_cell")
+			  				optionCell.setAttribute("style", "width: " + cellWidth + ";")
+			  				expireRow.appendChild(optionCell)
+			  			}
+			  			// Update option cell
+			  			optionCell.innerHTML = "$" + parseFloat(option.strikePrice).toFixed(2) +
+			  			 " (" + (parseFloat(option.bid) / parseFloat(stock.bid) * 100).toFixed(2) + "%)" +
+			  			 "<br>$" + parseFloat(option.bid).toFixed(2) + " - $" + parseFloat(option.ask).toFixed(2)
+			  		})
+
+			  		while (expireRow.cells.length <= 5) {
+			  			var emptyCell = document.createElement("td")
+			  			emptyCell.setAttribute("style", "width: " + cellWidth + ";")
+			  			expireRow.appendChild(emptyCell)
+			  		}
+
+			  	})
+
+			  })
+			  
+			  // var stockRow = document.createElement("tr");
+			  // stockRow.setAttribute("id", "SYMB1");
+
+			  // var nameColumn = document.createElement("td");
+			  // nameColumn.setAttribute("id", "SYMB1_symbol");
+			  // nameColumn.appendChild(document.createTextNode("SYMB1"));
+			  // stockRow.appendChild(nameColumn);
+
+			  // stockTable.appendChild(stockRow);
+			}
+
+			fetchData()
+			setInterval(fetchData, 1000)
+
+		</script>
+
+	</body>
+
+</html>
